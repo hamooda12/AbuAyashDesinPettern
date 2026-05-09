@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    image: hotel-api
+    container_name: hotel-api
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ZmFrZS1kZW1vLXNlY3JldC1mb3ItY291cnNlLXByb2plY3QtY2hhbmdlLW1lLWFzYXAtMTIzNDU2Nzg5
+      MYSQL_HOST: db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1234
+      UPLOAD_BASE_DIR: uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - app_uploads:/app/uploads
+
+  db:
+    image: mysql:8
+    container_name: hotel-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: hotel_watterson
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+  app_uploads:
