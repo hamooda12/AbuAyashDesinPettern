@@ -1,6 +1,8 @@
 package com.example.hotalproject.HotelCatalog.booking;
 
 import com.example.hotalproject.HotelCatalog.Utility.Exceptions.ResourceNotFoundException;
+import com.example.hotalproject.HotelCatalog.notification.NotificationChannel;
+import com.example.hotalproject.HotelCatalog.notification.NotificationSenderFactory;
 import com.example.hotalproject.HotelCatalog.notification.NotificationService;
 import com.example.hotalproject.HotelCatalog.notification.NotificationType;
 import com.example.hotalproject.HotelCatalog.payment.Payment;
@@ -28,7 +30,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final RoomTypeRepository roomTypeRepository;
     private  final PaymentRepository paymentRepository;
-    private final NotificationService notificationService;
+    private final NotificationSenderFactory notificationSenderFactory;
     private final AppUserRepository appUserRepository;
     public BookingResponse getBooking(Long bookingId, String requesterEmail, boolean privilegedUser) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(()->new BookingException("Booking not found"));
@@ -93,7 +95,7 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        notificationService.send(
+        notificationSenderFactory.getSender(NotificationChannel.EMAIL).send(
                 saved.getGuestEmail(),
                 NotificationType.BOOKING_CREATED,
                 "Booking created",
@@ -131,7 +133,7 @@ public class BookingService {
         booking.setStatus(BookingStatus.CONFIRMED);
         Booking updated = bookingRepository.save(booking);
 
-        notificationService.send(
+        notificationSenderFactory.getSender(NotificationChannel.EMAIL).send(
                 updated.getGuestEmail(),
                 NotificationType.BOOKING_CONFIRMED,
                 "Booking confirmed",
@@ -168,7 +170,7 @@ public class BookingService {
 
         Booking updated = bookingRepository.save(booking);
 
-        notificationService.send(
+        notificationSenderFactory.getSender(NotificationChannel.EMAIL).send(
                 updated.getGuestEmail(),
                 NotificationType.BOOKING_CANCELLED,
                 "Booking cancelled",

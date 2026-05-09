@@ -1,4 +1,7 @@
 package com.example.hotalproject.HotelCatalog.notification;
 
-public enum fg {
+public enum NotificationChannel {
+    EMAIL,
+    SMS,
+    IN_APP
 }

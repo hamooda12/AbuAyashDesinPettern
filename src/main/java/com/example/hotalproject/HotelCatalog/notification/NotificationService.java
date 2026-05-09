@@ -6,6 +6,7 @@ public interface NotificationService {
 
     NotificationResponse send(String recipient,
                               NotificationType type,
+                              NotificationChannel channel,
                               String subject,
                               String message);
 

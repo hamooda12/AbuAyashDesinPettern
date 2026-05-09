@@ -1,36 +1,34 @@
 package com.example.hotalproject.HotelCatalog.notification;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationSenderFactory notificationSenderFactory;
 
     @Override
     public NotificationResponse send(String recipient,
                                      NotificationType type,
+                                     NotificationChannel channel,
                                      String subject,
                                      String message) {
 
-        Notification notification = Notification.builder()
-                .recipient(recipient)
-                .type(type)
-                .subject(subject)
-                .message(message)
-                .status(NotificationStatus.SENT)
-                .build();
+        NotificationSender sender = notificationSenderFactory.getSender(channel);
+
+        Notification notification = sender.send(
+                recipient,
+                type,
+                subject,
+                message
+        );
 
         notification = notificationRepository.save(notification);
-
-        log.info("Mock notification sent to {} | type={} | subject={}",
-                recipient, type, subject);
 
         return toResponse(notification);
     }
@@ -48,6 +46,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .id(notification.getId())
                 .recipient(notification.getRecipient())
                 .type(notification.getType())
+                .channel(notification.getChannel())
                 .subject(notification.getSubject())
                 .message(notification.getMessage())
                 .status(notification.getStatus())
