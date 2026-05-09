@@ -10,6 +10,7 @@ import com.example.hotalproject.HotelCatalog.payment.PaymentRepository;
 import com.example.hotalproject.HotelCatalog.payment.PaymentStatus;
 import com.example.hotalproject.HotelCatalog.roomType.RoomType;
 import com.example.hotalproject.HotelCatalog.roomType.RoomTypeRepository;
+import com.example.hotalproject.LoggerService;
 import com.example.hotalproject.security.AppUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +33,19 @@ public class BookingService {
     private  final PaymentRepository paymentRepository;
     private final NotificationSenderFactory notificationSenderFactory;
     private final AppUserRepository appUserRepository;
+
+    private final LoggerService logger = LoggerService.getInstance();
+
+
     public BookingResponse getBooking(Long bookingId, String requesterEmail, boolean privilegedUser) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(()->new BookingException("Booking not found"));
+
+        logger.info("BookingService initialized");
+
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(()->
+        {
+            logger.error("Booking with id " + bookingId + " not found");
+            return new BookingException("Booking not found");
+        });
         ensureCanAccessBooking(booking, requesterEmail, privilegedUser);
         return  BookingMapper.toResponse(booking);
     }

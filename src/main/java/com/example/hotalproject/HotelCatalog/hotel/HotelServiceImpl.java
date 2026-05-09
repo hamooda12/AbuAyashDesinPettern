@@ -4,6 +4,7 @@ import com.example.hotalproject.HotelCatalog.Utility.Exceptions.ResourceNotFound
 import com.example.hotalproject.HotelCatalog.roomType.RoomTypeMapper;
 import com.example.hotalproject.HotelCatalog.roomType.RoomTypeRepository;
 import com.example.hotalproject.HotelCatalog.roomType.RoomTypeResponseDto;
+import com.example.hotalproject.LoggerService;
 import com.example.hotalproject.media.FileStorageService;
 import com.example.hotalproject.PagedResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,8 @@ public class HotelServiceImpl implements HotelService {
     private final RoomTypeRepository roomTypeRepository;
     private final FileStorageService fileStorageService;
 
+    private final LoggerService logger = LoggerService.getInstance();
+
     @Override
     @Transactional
     public HotelResponseDto createHotel(HotelRequestDto request) {
@@ -45,8 +48,12 @@ public class HotelServiceImpl implements HotelService {
     }
     @Override
     public HotelResponseDto getHotel(Long id) {
+        logger.info("Getting hotel by id: " + id);
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Hotel", id));
+                .orElseThrow(() -> {
+                    logger.error("Hotel with id " + id + " not found");
+                    return new ResourceNotFoundException("Hotel", id);
+                });
         List<RoomTypeResponseDto> roomTypes = roomTypeRepository.findByHotelId(id)
                 .stream()
                 .map(RoomTypeMapper::toResponse)
