@@ -1,9 +1,12 @@
 package com.example.hotalproject.HotelCatalog.roomType;
 import com.example.hotalproject.HotelCatalog.Utility.Exceptions.ResourceNotFoundException;
 import com.example.hotalproject.HotelCatalog.hotel.*;
+import com.example.hotalproject.LoadData;
 import com.example.hotalproject.media.FileStorageService;
 import com.example.hotalproject.PagedResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,7 +26,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     private final RoomTypeRepository roomTypeRepository;
     private final HotelRepository hotelRepository;
     private final FileStorageService fileStorageService;
-
+    private static final Logger log = LoggerFactory.getLogger(RoomTypeServiceImpl.class);
     public RoomTypeResponseDto createRoomType(Long hotelId, RoomTypeRequestDto request) {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new HotelNotFoundException(hotelId));
