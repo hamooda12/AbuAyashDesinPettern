@@ -2,14 +2,13 @@ package com.example.hotalproject.HotelCatalog.payment;
 
 import com.example.hotalproject.HotelCatalog.Utility.Exceptions.ConflictException;
 import com.example.hotalproject.HotelCatalog.Utility.Exceptions.ResourceNotFoundException;
-import com.example.hotalproject.HotelCatalog.availability.AvailabilityServiceImpl;
+
 import com.example.hotalproject.HotelCatalog.booking.Booking;
 import com.example.hotalproject.HotelCatalog.booking.BookingRepository;
 import com.example.hotalproject.HotelCatalog.booking.BookingStatus;
-import com.example.hotalproject.HotelCatalog.notification.NotificationChannel;
-import com.example.hotalproject.HotelCatalog.notification.NotificationSenderFactory;
-import com.example.hotalproject.HotelCatalog.notification.NotificationService;
-import com.example.hotalproject.HotelCatalog.notification.NotificationType;
+
+import org.springframework.context.ApplicationEventPublisher;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
+
 
 @Slf4j
 @Service
@@ -25,10 +24,11 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private  final AvailabilityServiceImpl serviceImpl;
+
     private final BookingRepository bookingRepository;
-    private final NotificationSenderFactory notificationSenderFactory;
+
     private final PaymentStrategyFactory paymentStrategyFactory;
+    private final ApplicationEventPublisher eventPublisher;
     @Transactional
     public PaymentResponse createPaymentIntent(PaymentIntentRequest request, String requesterEmail, boolean privilegedUser) {
         Booking booking = bookingRepository.findById(request.getBookingId())
@@ -57,12 +57,11 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
 
-        notificationSenderFactory.getSender(NotificationChannel.SMS).send(
-                booking.getGuestEmail(),
-                NotificationType.PAYMENT_INITIATED,
-                "Payment initiated",
-                "Payment intent created for booking #" + booking.getId() +
-                        ". Reference: " + payment.getProviderRef()
+        eventPublisher.publishEvent(
+                new PaymentRefundedEvent(
+                        booking.getId(),
+                        booking.getGuestEmail()
+                )
         );
 
         log.info("Payment {} initiated for booking {} - amount {}",
@@ -95,22 +94,22 @@ public class PaymentService {
         if (outcome == PaymentStatus.SUCCESS) {
             booking.setStatus(BookingStatus.CONFIRMED);
 
-            notificationSenderFactory.getSender(NotificationChannel.SMS).send(
-                    booking.getGuestEmail(),
-                    NotificationType.PAYMENT_SUCCESS,
-                    "Payment successful",
-                    "Payment for booking #" + booking.getId() + " was successful."
+            eventPublisher.publishEvent(
+                    new PaymentSuccessEvent(
+                            booking.getId(),
+                            booking.getGuestEmail()
+                    )
             );
         }
 
         if (outcome == PaymentStatus.FAILED) {
             booking.setStatus(BookingStatus.PENDING);
 
-            notificationSenderFactory.getSender(NotificationChannel.SMS).send(
-                    booking.getGuestEmail(),
-                    NotificationType.PAYMENT_FAILED,
-                    "Payment failed",
-                    "Payment for booking #" + booking.getId() + " has failed."
+            eventPublisher.publishEvent(
+                    new PaymentFailedEvent(
+                            booking.getId(),
+                            booking.getGuestEmail()
+                    )
             );
         }
 
@@ -146,11 +145,11 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.REFUNDED);
         payment = paymentRepository.save(payment);
 
-        notificationSenderFactory.getSender(NotificationChannel.SMS).send(
-                booking.getGuestEmail(),
-                NotificationType.PAYMENT_REFUNDED,
-                "Payment refunded",
-                "Payment for booking #" + booking.getId() + " has been refunded."
+        eventPublisher.publishEvent(
+                new PaymentRefundedEvent(
+                        booking.getId(),
+                        booking.getGuestEmail()
+                )
         );
 
         log.info("Payment {} refunded for booking {}", paymentId, booking.getId());
