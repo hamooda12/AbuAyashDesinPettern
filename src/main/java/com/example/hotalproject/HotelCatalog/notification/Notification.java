@@ -26,6 +26,10 @@ public class Notification {
     @Column(nullable = false)
     private NotificationType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationChannel channel;
+
     @Column(nullable = false, length = 255)
     private String subject;
 

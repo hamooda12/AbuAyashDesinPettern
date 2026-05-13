@@ -6,6 +6,8 @@ import com.example.hotalproject.HotelCatalog.availability.AvailabilityServiceImp
 import com.example.hotalproject.HotelCatalog.booking.Booking;
 import com.example.hotalproject.HotelCatalog.booking.BookingRepository;
 import com.example.hotalproject.HotelCatalog.booking.BookingStatus;
+import com.example.hotalproject.HotelCatalog.notification.NotificationChannel;
+import com.example.hotalproject.HotelCatalog.notification.NotificationSenderFactory;
 import com.example.hotalproject.HotelCatalog.notification.NotificationService;
 import com.example.hotalproject.HotelCatalog.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private  final AvailabilityServiceImpl serviceImpl;
     private final BookingRepository bookingRepository;
-    private final NotificationService notificationService;
+    private final NotificationSenderFactory notificationSenderFactory;
 
     @Transactional
     public PaymentResponse createPaymentIntent(PaymentIntentRequest request, String requesterEmail, boolean privilegedUser) {
@@ -56,7 +58,7 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
 
-        notificationService.send(
+        notificationSenderFactory.getSender(NotificationChannel.SMS).send(
                 booking.getGuestEmail(),
                 NotificationType.PAYMENT_INITIATED,
                 "Payment initiated",
@@ -94,7 +96,7 @@ public class PaymentService {
         if (outcome == PaymentStatus.SUCCESS) {
             booking.setStatus(BookingStatus.CONFIRMED);
 
-            notificationService.send(
+            notificationSenderFactory.getSender(NotificationChannel.SMS).send(
                     booking.getGuestEmail(),
                     NotificationType.PAYMENT_SUCCESS,
                     "Payment successful",
@@ -105,7 +107,7 @@ public class PaymentService {
         if (outcome == PaymentStatus.FAILED) {
             booking.setStatus(BookingStatus.PENDING);
 
-            notificationService.send(
+            notificationSenderFactory.getSender(NotificationChannel.SMS).send(
                     booking.getGuestEmail(),
                     NotificationType.PAYMENT_FAILED,
                     "Payment failed",
@@ -145,7 +147,7 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.REFUNDED);
         payment = paymentRepository.save(payment);
 
-        notificationService.send(
+        notificationSenderFactory.getSender(NotificationChannel.SMS).send(
                 booking.getGuestEmail(),
                 NotificationType.PAYMENT_REFUNDED,
                 "Payment refunded",

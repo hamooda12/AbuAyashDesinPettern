@@ -1,12 +1,10 @@
 package com.example.hotalproject.HotelCatalog.roomType;
 import com.example.hotalproject.HotelCatalog.Utility.Exceptions.ResourceNotFoundException;
 import com.example.hotalproject.HotelCatalog.hotel.*;
-import com.example.hotalproject.LoadData;
+import com.example.hotalproject.LoggerService;
 import com.example.hotalproject.media.FileStorageService;
 import com.example.hotalproject.PagedResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -26,7 +24,9 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     private final RoomTypeRepository roomTypeRepository;
     private final HotelRepository hotelRepository;
     private final FileStorageService fileStorageService;
-    private static final Logger log = LoggerFactory.getLogger(RoomTypeServiceImpl.class);
+
+    private final LoggerService logger = LoggerService.getInstance();
+
     public RoomTypeResponseDto createRoomType(Long hotelId, RoomTypeRequestDto request) {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new HotelNotFoundException(hotelId));
@@ -46,8 +46,12 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     @Override
     @Transactional
     public RoomTypeResponseDto updateRoomType(Long id, RoomTypeRequestDto request) {
+        logger.info("Updating room type with id " + id);
         RoomType roomType = roomTypeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("RoomType", id));
+                .orElseThrow(() -> {
+                    logger.error("Room type with id " + id + " not found");
+                    return new ResourceNotFoundException("RoomType", id);
+                });
         RoomTypeMapper.updateEntity(roomType, request);
         roomType = roomTypeRepository.save(roomType);
         return RoomTypeMapper.toResponse(roomType);
@@ -56,6 +60,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     @Override
     @Transactional(readOnly = true)
     public List<RoomTypeResponseDto> getRoomTypesByHotel(Long hotelId) {
+        logger.info("Getting room types for hotel id: " + hotelId);
         return roomTypeRepository.findByHotelId(hotelId)
                 .stream()
                 .map(RoomTypeMapper::toResponse)
