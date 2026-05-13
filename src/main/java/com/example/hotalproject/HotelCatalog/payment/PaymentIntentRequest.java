@@ -14,4 +14,5 @@ public class PaymentIntentRequest {
 
     @NotNull(message = "Booking ID is required")
     private Long bookingId;
+    private PaymentMethod paymentMethod = PaymentMethod.CARD;
 }

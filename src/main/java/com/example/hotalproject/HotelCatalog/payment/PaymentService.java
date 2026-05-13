@@ -28,7 +28,7 @@ public class PaymentService {
     private  final AvailabilityServiceImpl serviceImpl;
     private final BookingRepository bookingRepository;
     private final NotificationSenderFactory notificationSenderFactory;
-
+    private final PaymentStrategyFactory paymentStrategyFactory;
     @Transactional
     public PaymentResponse createPaymentIntent(PaymentIntentRequest request, String requesterEmail, boolean privilegedUser) {
         Booking booking = bookingRepository.findById(request.getBookingId())
@@ -48,13 +48,12 @@ public class PaymentService {
                             " with status: " + existing.getStatus()
             );
         });
+        PaymentMethod paymentMethod = request.getPaymentMethod();
 
-        Payment payment = Payment.builder()
-                .booking(booking)
-                .amount(booking.getTotalPrice())
-                .status(PaymentStatus.INITIATED)
-                .providerRef("SIM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                .build();
+        Payment payment = paymentStrategyFactory
+                .getStrategy(paymentMethod)
+                .pay(booking);
+
 
         payment = paymentRepository.save(payment);
 
